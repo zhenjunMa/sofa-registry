@@ -1,0 +1,37 @@
+name: publish sdks
+
+on:
+  workflow_dispatch:
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        jdk: [ 6, 8 ]
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Maven Central Repository
+        uses: actions/setup-java@v1
+        with:
+          java-version: ${{ matrix.jdk }}
+          server-id: ossrh
+          server-username: MAVEN_USERNAME
+          server-password: MAVEN_PASSWORD
+          gpg-private-key: ${{ secrets.MAVEN_GPG_PRIVATE_KEY }}
+          gpg-passphrase: MAVEN_GPG_PASSPHRASE
+      - name: Publish client to Apache Maven Central
+        if: matrix.jdk == '6'
+        run: mvn clean deploy -pl client/all -am -Dmaven.test.skip=true -Prelease
+        env:
+          MAVEN_USERNAME: ${{ secrets.MAVEN_USERNAME }}
+          MAVEN_PASSWORD: ${{ secrets.MAVEN_PASSWORD }}
+          MAVEN_GPG_PASSPHRASE: ${{ secrets.MAVEN_GPG_PASSPHRASE }}
+      - name: Publish test to Apache Maven Central
+        if: matrix.jdk == '8'
+        run: mvn clean deploy -pl server,server/common,server/common/util,server/common/model,server/remoting,server/remoting/api,server/remoting/bolt,server/remoting/http,server/store,server/store/api,server/store/jraft,server/store/jdbc,server/server,server/server/shared,server/server/session,server/server/data,server/server/meta,server/server/integration,test -Dmaven.test.skip=true -Prelease
+        env:
+          MAVEN_USERNAME: ${{ secrets.MAVEN_USERNAME }}
+          MAVEN_PASSWORD: ${{ secrets.MAVEN_PASSWORD }}
+          MAVEN_GPG_PASSPHRASE: ${{ secrets.MAVEN_GPG_PASSPHRASE }}
+
